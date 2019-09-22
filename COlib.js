@@ -159,8 +159,20 @@ var COlib = COlib || function () {
 
     var attrNames = {
       'COF': {
-        'pj': {},
-        'pnj': {}
+        'pj': {
+          atkRpt: 'armes',
+          atkName: 'armenom',
+          atkRoll: 'jet',
+          capaRpt: 'jetcapas',
+          capaName: 'jetcapanom',
+          capaRoll: 'jet'
+        },
+        'pnj': {
+          atkRpt: 'pnjatk',
+          atkRoll: 'jet',
+          capaRpt: 'pnjcapas',
+          capaRoll: 'jet'
+        }
       },
       'COC': {
         'pj': {
@@ -176,24 +188,42 @@ var COlib = COlib || function () {
         },
         'pnj': {
           atkRpt: 'pnjatk',
+          atkName: 'atknom',
           atkRoll: 'jet',
           capaRpt: 'pnjcapas',
+          capaName: 'capanom',
           capaRoll: 'jet'
         },
         'vehicule': {
           capaRpt: 'jetv',
+          capaName: 'jetvnom',
           capaRoll: 'jetv'
         }
       },
       'CG': {
         'pj': {
-
+          atkRpt: 'armes',
+          atkName: 'armenom',
+          atkRoll: 'atk',
+          capaRpt: 'jetcapas',
+          capaName: 'jetcapanom',
+          capaRoll: 'jetcapa',
+          traitRpt: 'traits',
+          traitName: 'traitnom',
+          traitRoll: 'trait'
         },
         'pnj': {
-
+          atkRpt: 'pnjatk',
+          atkName: 'atknom',
+          atkRoll: 'atkpnj',
+          capaRpt: 'pnjcapas',
+          capaName: 'capanom',
+          capaRoll: 'pnjcapa'
         },
         'vaisseau': {
-
+          atkRpt: 'armesv',
+          atkName: 'armenom',
+          atkRoll: 'atkv'
         }
       }
     };
