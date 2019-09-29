@@ -1,8 +1,13 @@
 var COlib_loaded = false;
-var COlib_version = 0.2;
+var COlib_version = 1.0;
 
 var COlib = COlib || function () {
 
+  /**
+   * Whisper a message to a player
+   * @param {string} origin 
+   * @param {string} msg 
+   */
   function sendPlayer(origin, msg) {
     var dest = origin;
     if (origin.who) {
@@ -12,6 +17,11 @@ var COlib = COlib || function () {
     sendChat('<script>', '/w "' + dest + '" ' + msg);
   }
 
+  /**
+   * Log a message to the debug console
+   * @param {string} msg 
+   * @param {boolean} force 
+   */
   function sendLog(msg, force) {
     force = force || false;
     if (state.COlib.logging || force) {
@@ -25,33 +35,51 @@ var COlib = COlib || function () {
     }
   }
 
+  /**
+   * Return the chat string for a character's attribute
+   * @param {string} char 
+   * @param {string} attr 
+   */
   function charAttr(char, attr) {
     return `@{${char}|${attr}}`;
   }
 
+  /**
+   * Return the full name for a repeating section attribute
+   * @param {string} section 
+   * @param {number|string} index 
+   * @param {string} attr 
+   */
   function repeatAttr(section, index, attr) {
     if (isNaN(index)) return `repeating_${section}_${index}_${attr}`;
     else return `repeating_${section}_$${index}_${attr}`;
   }
 
+  /**
+   * Return the chat string for character's repeating attribute
+   * @param {string} char 
+   * @param {string} section 
+   * @param {number|string} index 
+   * @param {string} attr 
+   */
   function charRepeatAttr(char, section, index, attr) {
     return charAttr(char, repeatAttr(section, index, attr));
   }
 
-  function repeatCount(charId, section, attrCount) {
-    var count = 0;
-    var attribs = findObjs({
-      _type: 'attribute',
-      _characterid: charId,
-    });
-    var attrib;
-    for (attrib = 0; attrib < attribs.length; attrib++) {
-      attrName = attribs[attrib].get('name');
-      if (attrName.startsWith(`repeating_${section}_`) && attrName.endsWith(`_${attrCount}`)) count++;
-    }
-    return count;
+  /**
+   * Return the number of rows in a repeating section
+   * @param {string} charId 
+   * @param {string} section 
+   */
+  function repeatCount(charId, section) {
+    return repeatRowIds(charId, section).length; 
   }
 
+  /**
+   * Return all the row ids for a given section
+   * @param {string} charId 
+   * @param {string} section 
+   */
   function repeatRowIds(charId, section) {
     var rowIds = [];
     var attribs = findObjs({
@@ -178,44 +206,44 @@ var COlib = COlib || function () {
         'pj': {
           atkRpt: 'armes',
           atkName: 'armenom',
-          atkRoll: 'jet',
+          atkRoll: 'pjatk',
           capaRpt: 'jetcapas',
           capaName: 'jetcapanom',
-          capaRoll: 'jet',
+          capaRoll: 'pjcapa',
           traitRpt: 'traits',
           traitName: 'traitnom',
-          traitRoll: 'trait'
+          traitRoll: 'pjtrait'
         },
         'pnj': {
           atkRpt: 'pnjatk',
           atkName: 'atknom',
-          atkRoll: 'jet',
+          atkRoll: 'pnjatk',
           capaRpt: 'pnjcapas',
           capaName: 'capanom',
-          capaRoll: 'jet'
+          capaRoll: 'pnjcapa'
         },
         'vehicule': {
           capaRpt: 'jetv',
           capaName: 'jetvnom',
-          capaRoll: 'jetv'
+          capaRoll: 'vehicule'
         }
       },
       'CG': {
         'pj': {
           atkRpt: 'armes',
           atkName: 'armenom',
-          atkRoll: 'atk',
+          atkRoll: 'pjatk',
           capaRpt: 'jetcapas',
           capaName: 'jetcapanom',
-          capaRoll: 'jetcapa',
+          capaRoll: 'pjcapa',
           traitRpt: 'traits',
           traitName: 'traitnom',
-          traitRoll: 'trait'
+          traitRoll: 'pjtrait'
         },
         'pnj': {
           atkRpt: 'pnjatk',
           atkName: 'atknom',
-          atkRoll: 'atkpnj',
+          atkRoll: 'pnjatk',
           capaRpt: 'pnjcapas',
           capaName: 'capanom',
           capaRoll: 'pnjcapa'
@@ -223,7 +251,7 @@ var COlib = COlib || function () {
         'vaisseau': {
           atkRpt: 'armesv',
           atkName: 'armenom',
-          atkRoll: 'atkv'
+          atkRoll: 'vatk'
         }
       }
     };
@@ -386,6 +414,7 @@ var COlib = COlib || function () {
     switch (args[1]) {
       case '--u':
         state.COlib.universe = args[2].toUpperCase();
+        configDisplay();
         break;
       case '--whisper':
         state.COlib.whisper = !state.COlib.whisper;
