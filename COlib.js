@@ -1,4 +1,7 @@
-var COlib_loaded = false;
+/**
+ * COlib : Chronique Oubliées library
+ */
+
 var COlib_version = 1.0;
 
 var COlib = COlib || function () {
@@ -170,6 +173,21 @@ var COlib = COlib || function () {
     return button;
   }
 
+
+  /**
+   * Output the whisper command or not
+   * (based on sheet and general configuration)
+   * @param {string} toGM 
+   * @param {string} charName 
+   */
+  function whisper(toGM, charName) {
+    var w = toGM;
+    if (w == '' && state.COlib.whisper) {
+      w = `/w "${charName}" `;
+    }
+    return w;
+  }
+
   /**
    * Output a list of actions to the chat
    * @param {string} charId 
@@ -179,8 +197,8 @@ var COlib = COlib || function () {
     var charName = getAttrByName(charId, 'character_name');
     var chatMsg = '';
     var optDesc = ''; // descriptions only
-    var toGM = getAttrByName(charId, 'togm');
-    var fiche = getAttrByName(charId, 'type_personnage')
+    var fiche = getAttrByName(charId, 'type_personnage');
+    var toGM = getAttrByName(charId, (fiche === 'pnj' ? 'pnj_togm' : 'togm'));
     for (var a = 0; a < args.length; a++) {
       if (args[a] == '--desc') optDesc = ' --desc';
     }
@@ -209,6 +227,7 @@ var COlib = COlib || function () {
           atkRoll: 'pjatk',
           capaRpt: 'jetcapas',
           capaName: 'jetcapanom',
+          capaSkill: 'jetcapatitre',
           capaRoll: 'pjcapa',
           traitRpt: 'traits',
           traitName: 'traitnom',
@@ -280,9 +299,7 @@ var COlib = COlib || function () {
           }
         }
         if (chatMsg != '') {
-          var w = toGM;
-          if (w == '' && state.COlib.whisper) w = `/w "${charName}" `;
-          chatMsg = w + `&{template:co1} {{perso=${charAttr(charName, 'character_name')}}} {{subtags=${charAttr(charName, 'PROFIL')}}} {{name=Capacités}} {{desc=${chatMsg} }}`;
+          chatMsg = whisper(toGM, charName) + `&{template:co1} {{perso=${charAttr(charName, 'character_name')}}} {{subtags=${charAttr(charName, 'PROFIL')}}} {{name=Capacités}} {{desc=${chatMsg} }}`;
         }
         break;
 
@@ -291,45 +308,55 @@ var COlib = COlib || function () {
         var voie = 'voie' + args[2] + '-';
         var rangs = [voie + '1', voie + '2', voie + '3', voie + '4', voie + '5']
         for (var rang = 0; rang < rangs.length; rang++) {
-          var rangNom = getAttrByName(charId, rangs[rang]);
-          var abilityName = 'V' + args[2] + 'R' + (rang + 1).toString();
+          // can have multiple ';' separated abilities
+          var rangData = getAttrByName(charId, rangs[rang]).split(';');
           var chatRang = '';
-          if (rangNom != '') {
-            var handoutObj = findHandout(rangNom);
-            if (handoutObj) {
-              chatRang += handoutLink(rangNom, rang + 1, handoutObj) + ' ';
+          let items = 0;
+          for (let rangNom of rangData) {
+            if (chatRang != '' && ++items > 1) chatRang += ', ';
+            rangNom = rangNom.trim();
+            var rangLabel = rangNom;
+            // can have <ability name> | <display label>
+            if (rangNom.indexOf('|') != -1) {
+              var rangExtras = rangNom.split('|');
+              rangNom = rangExtras[0].trim();
+              rangLabel = rangExtras[1].trim();
             }
-            if (optDesc != ' --desc') {
-              var abilityObj = findAbility(charId, abilityName);
-              if (abilityObj) {
-                chatRang += abilityButton(charId, rangNom, abilityName, rang + 1, handoutObj, abilityObj);
+            var abilityName = 'V' + args[2] + 'R' + (rang + 1).toString();
+            if (rangNom != '') {
+              var handoutObj = findHandout(rangNom);
+              if (handoutObj) {
+                chatRang += handoutLink(rangLabel, ((items > 1) ? 0 : rang + 1), handoutObj) + ' ';
+              }
+              if (optDesc != ' --desc') {
+                var abilityObj = findAbility(charId, abilityName);
+                if (abilityObj) {
+                  chatRang += abilityButton(charId, rangLabel, abilityName, rang + 1, handoutObj, abilityObj);
+                }
               }
             }
-            if (chatRang != '') chatMsg += chatRang + '\n\r';
           }
+          if (chatRang != '') chatMsg += chatRang + '\n\r';
         }
         if (chatMsg != '') {
-          var w = toGM;
-          if (w == '' && state.COlib.whisper) w = `/w "${charName}" `;
-          chatMsg = w + `&{template:co1} {{perso=${charName}}} {{subtags=Capacités}} {{name=${charAttr(charName, `voie${args[2]}nom`)}}} {{desc=${chatMsg} }}`;
+          chatMsg = whisper(toGM, charName) + `&{template:co1} {{perso=${charName}}} {{subtags=Capacités}} {{name=${charAttr(charName, `voie${args[2]}nom`)}}} {{desc=${chatMsg} }}`;
         }
         break;
 
         // !co-actions --competences
       case '--competences':
         if (attrs.capaRpt === '') break;
-        var competences = repeatRowIds(charId, attrs.capaRpt).length;
-        if (competences > 0) {
-          for (var competence = 0; competence < competences; competence++) {
-            var compNom = getAttrByName(charId, repeatAttr(attrs.capaRpt, competence, attrs.capaName));
+        var rowIds = repeatRowIds(charId, attrs.capaRpt);
+        if (rowIds.length > 0) {
+          for (var competence = 0; competence < rowIds.length; competence++) {
+            var compNom = getAttrByName(charId, repeatAttr(attrs.capaRpt, rowIds[competence], attrs.capaName));
+            var compLabel = getAttrByName(charId, repeatAttr(attrs.capaRpt, rowIds[competence], attrs.capaSkill));;
             if (compNom != '') {
-              chatMsg += `[${competence + 1}. ${compNom}](~${charId}|${repeatAttr(attrs.capaRpt, competence.toString(), attrs.capaRoll)})\n\r`;
+              chatMsg += `[${compNom}](~${charId}|${repeatAttr(attrs.capaRpt, rowIds[competence], attrs.capaRoll)})` + (compLabel && compLabel != null ? ` ${compLabel}` : '') + '\n\r';
             }
           }
           if (chatMsg != '') {
-            var w = toGM;
-            if (w == '' && state.COlib.whisper) w = `/w "${charName}" `;
-            chatMsg = w + `&{template:co1} {{perso=${charName}}} {{subtags=${charAttr(charName, 'PROFIL')}}} {{name=Compétences}} {{desc=${chatMsg} }}`;
+            chatMsg = whisper(toGM, charName) + `&{template:co1} {{perso=${charName}}} {{subtags=${charAttr(charName, 'PROFIL')}}} {{name=Compétences}} {{desc=${chatMsg} }}`;
           }
         }
         break;
@@ -338,50 +365,56 @@ var COlib = COlib || function () {
       case '--attaques':
         if (attrs.atkRpt === '') break;
         var rowIds = repeatRowIds(charId, attrs.atkRpt);
-        var armes = rowIds.length;
-        if (armes > 0) {
-          for (var arme = 0; arme < armes; arme++) {
+        if (rowIds.length > 0) {
+          for (var arme = 0; arme < rowIds.length; arme++) {
             var armeNom = '';
             armeNom = getAttrByName(charId, repeatAttr(attrs.atkRpt, rowIds[arme], attrs.atkName));
             var atkNom = '';
             if (fiche === 'pj' || fiche === 'vaisseau') {
               atkNom = getAttrByName(charId, repeatAttr(attrs.atkRpt, rowIds[arme], 'armejetn'));
             }
-            atkNom = (atkNom !== '') ? atkNom + ' ' + armeNom : armeNom;
+            var atkInfo = '';
+            atkInfo += (atkNom !== '') ? ' ' + atkNom : '';
             var atkType = getAttrByName(charId, repeatAttr(attrs.atkRpt, rowIds[arme], 'armeatk'));
             if (fiche !== 'vaisseau') {
+              var limitee = '';
+              if (fiche !== 'pnj') limitee = getAttrByName(charId, repeatAttr(attrs.atkRpt, rowIds[arme], 'armelim'));
+              if (limitee != '') atkInfo += ' ' + limitee;
               var portee = '';
               if (fiche !== 'pnj') portee = getAttrByName(charId, repeatAttr(attrs.atkRpt, rowIds[arme], 'armeportee'));
               if (portee != '') {
-                if (atkType == '@{ATKTIR}') atkNom += ' (D:';
-                if (atkType == '@{ATKMAG}') atkNom += ' (Mag:';
-                if (atkType == '@{ATKMEN}') atkNom += ' (Men:';
-                if (atkType == '@{ATKPSYINFLU}' || atkType == '@{ATKPSYINTUI}') atkNom += ' (Psy:';
-                atkNom += portee + ')';
+                if (atkType == '@{ATKTIR}') atkInfo += ' (D:';
+                if (atkType == '@{ATKMAG}') atkInfo += ' (Mag:';
+                if (atkType == '@{ATKMEN}') atkInfo += ' (Men:';
+                if (atkType == '@{ATKPSYINFLU}' || atkType == '@{ATKPSYINTUI}') atkInfo += ' (Psy:';
+                atkInfo += portee + ')';
               } else {
                 if (fiche !== 'pnj') {
                   if (atkType == '@{ATKMAG}') {
-                    atkNom += ' (Mag)';
+                    atkInfo += ' (Mag)';
                   } else if (atkType == '@{ATKMEN}') {
-                    atkNom += ' (Men)';
+                    atkInfo += ' (Men)';
                   } else if (atkType == '@{ATKPSYINFLU}' || atkType == '@{ATKPSYINTUI}') {
-                    atkNom += ' (Psy)';
+                    atkInfo += ' (Psy)';
                   } else {
-                    atkNom += ' (C)';
+                    atkInfo += ' (C)';
                   }
                 }
               }
             }
-            if (atkNom != '') {
-              chatMsg += `[${atkNom}](~${charId}|${repeatAttr(attrs.atkRpt, rowIds[arme], attrs.atkRoll)})\n\r`;
+            if (armeNom != '') {
+              chatMsg += `[${armeNom}](~${charId}|${repeatAttr(attrs.atkRpt, rowIds[arme], attrs.atkRoll)}) ${atkInfo}\n\r`;
             }
           }
           if (chatMsg != '') {
-            var w = toGM;
-            if (w == '' && state.COlib.whisper) w = `/w "${charName}" `;
-            chatMsg = w + `&{template:co1} {{perso=${charName}}} {{subtags=Combat}} {{name=Attaques}} {{desc=${chatMsg} }}`;
+            chatMsg = whisper(toGM, charName) + `&{template:co1} {{perso=${charName}}} {{subtags=Combat}} {{name=Attaques}} {{desc=${chatMsg} }}`;
           }
         }
+        break;
+      
+      case '--atk':
+        if (attrs.atkRpt === '' || args.length < 3) break;
+        chatMsg = whisper(toGM, charName) + `%{${charName}|${repeatAttr(attrs.atkRpt, args[2], attrs.atkRoll)}}`;
         break;
 
       default:
@@ -391,6 +424,279 @@ var COlib = COlib || function () {
       sendLog(chatMsg);
       sendChat(`character|${charId}`, chatMsg);
     }
+  }
+
+  /**
+   * Create, rename or delete profile and abilities handouts from JSON data
+   * !co-import capacites.profileName [rename|delete]
+   * @param {string} data 
+   * @param {object} flags 
+   */
+  function importAbilities(data, flags) {
+    const abilities = JSON.parse(data);
+    let profil = abilities.rs[0].profil;
+    let path = "";
+    let profileHandout = "";
+    for (const item of abilities.rs) {
+      let fullAbility = `${profil}.${item.voie}.${item.rang}.${item.capacite}`;
+      let action = "";
+      if (flags.deleteFlg) {
+        const handouts = findObjs({
+          _type: "handout",
+          name: fullAbility
+        });
+        for (const handout of handouts) {
+          handout.remove();
+          action = "[Deleted] ";
+        }
+      } else if (flags.renameFlg) {
+        const handouts = findObjs({
+          _type: "handout",
+          name: fullAbility
+        });
+        if (handouts.length == 1) {
+          handouts[0].set({
+            name: item.capacite
+          });
+          action = "[Renamed] ";
+        }
+      } else {
+        if (item.rang == "1") {
+          path = `Voie ${item.voie_deladu}${item.voie}`;
+          profileHandout += `<h3>${path}</h3>`;
+          if (item.voie_notes !== "") profileHandout += `<p>${item.voie_notes}</p>`;
+          profileHandout += "<ol>";
+        }
+        const handout = createObj('handout', {
+          name: fullAbility,
+          inplayerjournals: 'all',
+          archived: false
+        });
+        profileHandout += `
+                <li>
+                <a href="http://journal.roll20.net/handout/${handout.id}">${item.capacite}</a>
+                </li>
+                `;
+        let limitee = "";
+        if (item.limitee == 1) limitee = " (L)";
+        let sort = "";
+        if (item.sort == 1) sort = "*";
+        const notes = `
+                <h3>${item.capacite}${limitee}${sort}</h3>
+                <h5>${path}, rang ${item.rang}</h5>
+                <br>
+                <p>${item.description}</p>
+                `;
+        handout.set({
+          notes: notes
+        });
+        handout.set({
+          gmnotes: `<p>${fullAbility.split(".").join(" | ")}</p>`
+        });
+        if (item.rang == "5") {
+          profileHandout += "</ol>";
+          profileHandout += "<br>";
+        }
+      }
+      log(action + fullAbility);
+    }
+    if (!flags.deleteFlg && !flags.renameFlg) {
+      const handout = createObj('handout', {
+        name: `Profil : ${profil}`,
+        inplayerjournals: 'all',
+        archived: false
+      });
+      handout.set({
+        notes: profileHandout
+      });
+    }
+  }
+
+  /**
+   * Create, rename and delete abilities handouts for a single path from JSON data
+   * !co-import voie.pathName [rename|delete]
+   * @param {string} data 
+   * @param {object} flags 
+   */
+  function importPath(data, flags) {
+    const path = JSON.parse(data);
+    for (const item of path.rs) {
+      let fullAbility = `${item.rang}.${item.nom}`;
+      let action = "";
+      if (flags.deleteFlg) {
+        const handouts = findObjs({
+          _type: "handout",
+          name: fullAbility
+        });
+        for (const handout of handouts) {
+          handout.remove();
+          action = "[Deleted] ";
+        }
+      } else if (flags.renameFlg) {
+        const handouts = findObjs({
+          _type: "handout",
+          name: fullAbility
+        });
+        if (handouts.length == 1) {
+          handouts[0].set({
+            name: item.nom
+          });
+          action = "[Renamed] ";
+        }
+      } else {
+        const handout = createObj('handout', {
+          name: fullAbility,
+          inplayerjournals: 'all',
+          archived: false
+        });
+        pathName = `Voie ${item.voie_deladu}${item.voie}`;
+        let limitee = "";
+        if (item.limitee == 1) limitee = " (L)";
+        let sort = "";
+        if (item.sort == 1) sort = "*";
+        const notes = `
+                  <h3>${item.nom}${limitee}${sort}</h3>
+                  <h5>${pathName}, rang ${item.rang}</h5>
+                  <br>
+                  <p>${item.description}</p>
+                  `;
+        handout.set({
+          notes: notes
+        });
+      }
+    }
+  }
+
+  /**
+   * Create a profile handout from JSON data
+   * !co-import profil.profileName [rename|delete]
+   * @param {string} data 
+   */
+  function importProfile(data) {
+    const profile = JSON.parse(data);
+    let notes = '';
+    for (item of profile.rs) {
+      if (item.rang === '1') {
+        notes += `<h3>Voie ${item.voie_deladu}${item.nom}</h3>`;
+        notes += '<ol>';
+      }
+      const handouts = findObjs({
+        _type: "handout",
+        name: item.capacite
+      });
+      notes += 
+      `
+        <li>
+        <a href="http://journal.roll20.net/handout/${handouts[0].id}">${item.capacite}</a>
+        </li>
+      `;
+      if (item.rang === '5') {
+        notes += '</ol>';
+        notes += '<br>';
+      }
+    }
+    const handout = createObj('handout', {
+      name: "Profil : " + item.profil,
+      inplayerjournals: 'all',
+      archived: false
+    });
+    handout.set({
+      notes: notes
+    });
+  }
+
+  /**
+   * Create equipment handouts for a category from JSON data
+   * !co-import equipment.categoryName
+   * @param {string} data 
+   */
+  function importGear(data) {
+    const equipments = JSON.parse(data);
+    for (const equipment of equipments.rs) {
+      let notes = '';
+      notes += `<h3>${equipment.designation}</h3>`;
+      notes += `<h5>${equipment.categorie}</h5>`;
+      notes += '<ul>'
+      const props = equipment.props.split('~');
+      for (const prop of props) {
+        notes += `<li>${prop}</li>`
+      }
+      notes += `<li>Prix : ${equipment.prix}</li>`;
+      notes += '</ul>';
+      notes += `<p>${equipment.notes}</p>`;
+      const handout = createObj('handout', {
+        name: equipment.designation,
+        inplayerjournals: 'all',
+        archived: false
+      });
+      handout.set({
+        notes: notes
+      });
+    }
+  }
+
+  /**
+   * Retrieve handout content
+   * !co-import handoutName [delete|rename]
+   * @param {object} msg 
+   */
+  function readHandout(msg) {
+
+    let args = msg.content.split(" ");
+    if (args.length < 2) {
+      sendChat('COlib', '/w gm Missing handout name !');
+      return;
+    }
+    let handoutName = args[1];
+    const deleteFlg = ((args[2] || '').toLowerCase() === "delete");
+    const renameFlg = ((args[2] || '').toLowerCase() === "rename");
+    const flags = { 
+      "deleteFlg": deleteFlg,
+      "renameFlg": renameFlg
+    };
+
+    const handouts = findObjs({
+      _type: "handout",
+      name: handoutName
+    });
+    const handoutObj = handouts[0];
+
+    handoutObj.get("notes", function (notes) {
+      notes = notes.replace(/<p>/gi, "");
+      notes = notes.replace(/<\/p>/gi, "");
+      notes = notes.replace(/<br>/gi, "");
+      if (handoutName.indexOf("capacites.") == 0) {
+        importAbilities(notes, flags);
+      }
+      if (handoutName.indexOf("voie.") == 0) {
+        importPath(notes, flags);
+      }
+      if (handoutName.indexOf("profil.") == 0) {
+        importProfile(notes);
+      }
+      if (handoutName.indexOf("equipement.") == 0) {
+        importGear(notes);
+      }
+    });
+
+  }
+
+  /**
+   * Ping & move map to starting point
+   */
+  function pingStartToken() {
+    const startToken = "GroupePJs";
+    const tokens = findObjs({
+      _name: startToken,
+      _type: "graphic",
+      _pageid: Campaign().get("playerpageid")
+    });
+    const playerStartToken = tokens[0];
+    if (playerStartToken === undefined) {
+      sendChat('COlib', `/w gm Missing '${startToken}' token`);
+      return;
+    }
+    sendPing(playerStartToken.get("left"), playerStartToken.get("top"), playerStartToken.get("pageid"), "", true);
   }
 
   /**
@@ -456,6 +762,12 @@ var COlib = COlib || function () {
           }
         }
         break;
+      case '!co-import':
+        readHandout(msg);
+        break;
+      case '!co-ping':
+        pingStartToken();
+        break;
       default:
         break;
     }
@@ -464,6 +776,7 @@ var COlib = COlib || function () {
 
   return {
     apiCommand: apiCommand,
+    pingStartToken: pingStartToken,
   }
 
 }();
@@ -473,7 +786,6 @@ var COlib = COlib || function () {
  */
 on("ready", function () {
 
-  COlib_loaded = true;
   log(`COlib version ${COlib_version} loaded`);
 
   if (!state.COlib) {
@@ -484,16 +796,26 @@ on("ready", function () {
     }
   }
 
-});
+  /**
+  * Wire-up event for API chat message
+  */
+  on("chat:message", function (msg) {
 
-/**
- * Wire-up event for API chat message
- */
-on("chat:message", function (msg) {
+    "use strict";
 
-  "use strict";
-  if (!COlib_loaded) return;
+    if (msg.type === 'api') {
+      COlib.apiCommand(msg);
+    }
 
-  if (msg.type === 'api') COlib.apiCommand(msg);
+  });
+
+  /**
+  * Wire-up event for player page change
+   */
+  on("change:campaign:playerpageid", function () {
+    setTimeout(function () {
+      COlib.pingStartToken();
+    }, 1500);
+  });
 
 });
