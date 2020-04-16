@@ -2,7 +2,7 @@
  * COlib : Chronique Oubliées library
  */
 
-var COlib_version = 1.0;
+var COlib_version = 2.0;
 
 var COlib = COlib || function () {
 
@@ -173,6 +173,69 @@ var COlib = COlib || function () {
     return button;
   }
 
+  /**
+   * Return token object for id
+   * @param {string} id Token unique identifier
+   * @returns {object}
+   */
+  function getToken(id) {
+    return getObj('graphic', id);
+  }
+
+  /**
+   * Return selected tokens as an array of objects
+   * @param {object} msg Chat message object
+   * @returns {array<object>}
+   */
+  function getTokens(msg) {
+    const tokens = [];
+    if (msg.selected) {
+      msg.selected.forEach(token => {
+        tokens.push(getToken(token._id));
+      });
+    }
+    return tokens;
+  }
+
+  /**
+   * Return character object for id
+   * @param {string} id Character unique identifier
+   * @returns {object}
+   */
+  function getCharacter(id) {
+    return getObj('character', id);
+  }
+
+  /**
+   * Return character object from token 
+   * @param {object} token Token object
+   * @returns {object}
+   */
+  function getCharacterFromToken(token) {
+    if (token) {
+      return character = getObj('character', token.get('represents'));
+    }
+    else {
+      return null;
+    }
+  }
+
+  /**
+   * Return selected tokens as an array of character objects
+   * @param {object} msg Chat message object
+   * @returns {array<object>}
+   */
+  function getCharactersFromTokens(msg) {
+    const characters = [];
+    const tokens = getTokens(msg);
+    tokens.forEach(token => {
+      const character = getCharacterFromToken(token);
+      if (character) {
+        characters.push(character);
+      }
+    });
+    return characters;
+  }
 
   /**
    * Output the whisper command or not
@@ -295,7 +358,7 @@ var COlib = COlib || function () {
         for (var voie = 0; voie < voies.length; voie++) {
           var voieNom = getAttrByName(charId, voies[voie]);
           if (voieNom != '') {
-            chatMsg += `[${voie + 1}. ${voieNom}](!co-actions --voie ${voie + 1}${optDesc})\n\r`;
+            chatMsg += `[${voie + 1}. ${voieNom}](!co-actions --voie ${voie + 1}${optDesc} --charId=${charId})\n\r`;
           }
         }
         if (chatMsg != '') {
@@ -638,18 +701,17 @@ var COlib = COlib || function () {
   /**
    * Retrieve handout content
    * !co-import handoutName [delete|rename]
-   * @param {object} msg 
+   * @param {array<string>} command 
    */
-  function readHandout(msg) {
+  function readHandout(command) {
 
-    let args = msg.content.split(" ");
-    if (args.length < 2) {
+    if (command.length < 2) {
       sendChat('COlib', '/w gm Missing handout name !');
       return;
     }
-    let handoutName = args[1];
-    const deleteFlg = ((args[2] || '').toLowerCase() === "delete");
-    const renameFlg = ((args[2] || '').toLowerCase() === "rename");
+    let handoutName = command[1];
+    const deleteFlg = ((command[2] || '').toLowerCase() === "delete");
+    const renameFlg = ((command[2] || '').toLowerCase() === "rename");
     const flags = { 
       "deleteFlg": deleteFlg,
       "renameFlg": renameFlg
@@ -699,6 +761,92 @@ var COlib = COlib || function () {
     sendPing(playerStartToken.get("left"), playerStartToken.get("top"), playerStartToken.get("pageid"), "", true);
   }
 
+  function setCharacterAttrs(characterObj, marker) {
+    switch (marker.name) {
+      case 'dead':
+        break;
+      default:
+        break;
+    }
+  }
+
+  function setVirtual(tokenObj, marker) {
+    const prop = `status_${marker.name}`;
+    const state = marker.op === "-" ? false : true;
+    tokenObj.set(prop, state);
+  }
+
+  function setMarkers(tokenObj, characterObj, markerOps) {
+    // standard markers
+    const stdMarkers = 'red,blue,green,brown,purple,pink,yellow,dead'.split(',');
+    // game's custom markers
+    const tokenMarkers = JSON.parse(Campaign().get("token_markers"));
+    // token's markers
+    let currentMarkers = tokenObj.get("statusmarkers").split(',');
+    // loop through list of markers
+    markerOps.forEach(marker => {
+      if (marker.op === '+') { // set
+        let tokenMarker = tokenMarkers.find(tm => tm.name === marker.name);
+        if (!tokenMarker) {
+          tokenMarker = stdMarkers.find(std => std === marker.name);
+        }
+        if (tokenMarker) {
+          if (currentMarkers.length === 1 && currentMarkers[0] === '') {
+            currentMarkers[0] = marker.name;
+          }
+          else if (currentMarkers.indexOf(marker.name) === -1) {
+            currentMarkers.push(marker.name);
+          }
+          if (stdMarkers.indexOf(marker.name) !== -1) {
+            setVirtual(tokenObj, marker);
+          }
+        }
+        setCharacterAttrs(characterObj, marker)
+      }
+      if (marker.op === '-') { // unset
+        if (marker.name === '*') {
+          currentMarkers.forEach(item => {
+            if (stdMarkers.indexOf(item) !== -1) {
+              setVirtual(tokenObj, { op: '-', name: item });
+            }
+            setCharacterAttrs(characterObj, { op: '-', name: item })
+          });
+          currentMarkers = [];
+        }
+        else {
+          currentMarkers = tokenObj.get("statusmarkers").split(',');
+          currentMarkers = currentMarkers.filter(name => name !== marker.name);
+          if (stdMarkers.indexOf(marker.name) !== -1) {
+            setVirtual(tokenObj, marker);
+          }
+          setCharacterAttrs(characterObj, marker)
+        }
+      }
+    });
+    tokenObj.set("statusmarkers", currentMarkers.join(','));
+  }
+
+  function tokenMarkers(tokenObj, characterObj, command) {
+    let markerOps = [];
+    for (const cmd of command) {
+      if (cmd.toLowerCase().startsWith('+set:') || cmd.toLowerCase().startsWith('-set:')) {
+        const args = cmd.split(':');
+        const markers = args[1].split(',');
+        markers.forEach(marker => {
+          markerOps.push({ op: cmd.toLowerCase().slice(0,1), name: marker });
+        });
+      }
+      if (cmd.toLowerCase().startsWith('--set:')) {
+        const args = cmd.split(':');
+        const markers = args[1].split(',');
+        markers.forEach(marker => {
+          markerOps.push({ op: marker.slice(0, 1), name: marker.slice(1) });
+        });
+      }
+    }
+    setMarkers(tokenObj, characterObj, markerOps);
+  }
+
   /**
    * Display script configuration
    */
@@ -710,16 +858,16 @@ var COlib = COlib || function () {
 
   /**
    * Process configuration command
-   * @param {array<string>} args 
+   * @param {array<string>} command 
    */
   function configCOlib(args) {
-    if (args.length == 1) {
+    if (command.length == 1) {
       configDisplay();
       return;
     }
-    switch (args[1]) {
+    switch (command[1]) {
       case '--u':
-        state.COlib.universe = args[2].toUpperCase();
+        state.COlib.universe = command[2].toUpperCase();
         configDisplay();
         break;
       case '--whisper':
@@ -735,38 +883,72 @@ var COlib = COlib || function () {
     }
   }
 
+  function singleToken(msg, tokens) {
+    const count = tokens.length;
+    if (count != 1) {
+      sendChat('COlib', '\n\rPlease select a token first !');
+      sendLog(`Cannot execute '${msg.content}' : ${count} token(s) selected`, true);
+      return null;
+    }
+    return tokens[0];
+  }
+
   /**
    * Process API chat commands
    * @param {string} msg 
    */
   function apiCommand(msg) {
     msg.content = msg.content.replace(/\s+/g, ' '); //remove duplicate whites
-    var command = msg.content.split(' ');
+    const command = msg.content.split(' ');
+    const tokens = getTokens(msg);
+    let character = null;
 
     switch (command[0]) {
       case '!co-config':
         configCOlib(command);
         break;
       case '!co-actions':
-        if (!msg.selected || msg.selected.length != 1) {
-          tokens = (msg.selected) ? msg.selected.length : 0;
-          sendChat('COlib', '\n\rPlease select a token first !');
-          sendLog(`Cannot execute '${msg.content}' : ${tokens} token(s) selected`, true);
-          break;
-        }
-        var token = getObj('graphic', msg.selected[0]._id);
-        if (token) {
-          var character = getObj('character', token.get('represents'));
-          if (character) {
-            displayActions(character.id, command);
+        // check for --charid=@{character name|character_id} in command
+        for (cmd of command) {
+          if (cmd.toLowerCase().startsWith('--charid=')) {
+            charId = cmd.split('=')[1] || '';
+            if (charId !== '') {
+              if (charId.startsWith("'") || charId.startsWith('"')) {
+                charId = eval(charId);
+              }
+              character = getCharacter(charId);
+            }
           }
+        }
+        // check if token selected
+        if (!character) {
+          const token = singleToken(msg, tokens);
+          if (!token) {
+            break;
+          }
+          character = getCharacterFromToken(token);
+        }
+        // display character's action
+        if (character) {
+          displayActions(character.id, command);
+        } else {
+          sendChat('COlib', '\n\rPlease select a PC or NPC token first !');
+          sendLog(`Cannot execute '${msg.content}' : token not associated with a journal item`, true);
         }
         break;
       case '!co-import':
-        readHandout(msg);
+        readHandout(command);
         break;
       case '!co-ping':
         pingStartToken();
+        break;
+      case '!co-token':
+        const token = singleToken(msg, tokens);
+        if (!token) {
+          break;
+        }
+        character = getCharacterFromToken(token);
+        tokenMarkers(token, character, command);
         break;
       default:
         break;
