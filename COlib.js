@@ -745,6 +745,7 @@ var COlib = COlib || function () {
 
   /**
    * Ping & move map to starting point
+   * !co-ping [...]
    */
   function pingStartToken() {
     const startToken = "GroupePJs";
@@ -761,6 +762,11 @@ var COlib = COlib || function () {
     sendPing(playerStartToken.get("left"), playerStartToken.get("top"), playerStartToken.get("pageid"), "", true);
   }
 
+  /**
+   * Update character attributes from token marker change
+   * @param {object} characterObj Roll20 character object
+   * @param {object} marker Token marker object 
+   */
   function setCharacterAttrs(characterObj, marker) {
     switch (marker.name) {
       case 'dead':
@@ -770,12 +776,23 @@ var COlib = COlib || function () {
     }
   }
 
+  /**
+   * Set legacy virtual properties for standard markers
+   * @param {object} tokenObj Roll20 token object
+   * @param {object} marker Token marker object
+   */
   function setVirtual(tokenObj, marker) {
     const prop = `status_${marker.name}`;
     const state = marker.op === "-" ? false : true;
     tokenObj.set(prop, state);
   }
 
+  /**
+   * Apply token markers operation (add / remove)
+   * @param {object} tokenObj Roll20 token object
+   * @param {object} characterObj Roll20 character object
+   * @param {array<object>} markerOps List of marker operations objects
+   */
   function setMarkers(tokenObj, characterObj, markerOps) {
     // standard markers
     const stdMarkers = 'red,blue,green,brown,purple,pink,yellow,dead'.split(',');
@@ -826,6 +843,13 @@ var COlib = COlib || function () {
     tokenObj.set("statusmarkers", currentMarkers.join(','));
   }
 
+  /**
+   * Process token command
+   * !co-token [...]
+   * @param {object} tokenObj Roll20 token object
+   * @param {object} characterObj Roll20 character object
+   * @param {array<string>} command Chat command list
+   */
   function tokenMarkers(tokenObj, characterObj, command) {
     let markerOps = [];
     for (const cmd of command) {
@@ -858,6 +882,7 @@ var COlib = COlib || function () {
 
   /**
    * Process configuration command
+   * !co-config [...]
    * @param {array<string>} command 
    */
   function configCOlib(args) {
@@ -883,6 +908,12 @@ var COlib = COlib || function () {
     }
   }
 
+  /**
+   * Check only one token is selected
+   * @param {object} msg Roll20 chat message object
+   * @param {array<object>} tokens List of selected Roll20 token objects
+   * @returns Selected Roll20 token object or null if 0 or more than 1 token selected
+   */
   function singleToken(msg, tokens) {
     const count = tokens.length;
     if (count != 1) {
@@ -895,7 +926,7 @@ var COlib = COlib || function () {
 
   /**
    * Process API chat commands
-   * @param {string} msg 
+   * @param {object} msg Roll20 chat message object
    */
   function apiCommand(msg) {
     msg.content = msg.content.replace(/\s+/g, ' '); //remove duplicate whites
