@@ -833,7 +833,7 @@ var COlib = COlib || function () {
         const args = cmd.split(':');
         const markers = args[1].split(',');
         markers.forEach(marker => {
-          markerOps.push({ op: cmd.toLowerCase().slice(0,1), name: marker });
+          markerOps.push({ op: cmd.slice(0,1), name: marker });
         });
       }
       if (cmd.toLowerCase().startsWith('--set:')) {
