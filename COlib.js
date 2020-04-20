@@ -2,7 +2,7 @@
  * COlib : Chronique Oubliées library
  */
 
-var COlib_version = 2.0;
+var COlib_version = 2.10;
 
 var COlib = COlib || function () {
 
@@ -783,7 +783,7 @@ var COlib = COlib || function () {
    */
   function setVirtual(tokenObj, marker) {
     const prop = `status_${marker.name}`;
-    const state = marker.op === "-" ? false : true;
+    const state = marker.op === "-" ? false : (marker.badge !== 0 ? marker.badge : true);
     tokenObj.set(prop, state);
   }
 
@@ -802,50 +802,58 @@ var COlib = COlib || function () {
     let currentMarkers = tokenObj.get("statusmarkers").split(',');
     // loop through list of markers
     markerOps.forEach(marker => {
+      const isStdMarker = stdMarkers.indexOf(marker.name) !== -1;
       if (marker.op === '+') { // set
-        let tokenMarker = tokenMarkers.find(tm => tm.name === marker.name);
-        if (!tokenMarker) {
-          tokenMarker = stdMarkers.find(std => std === marker.name);
-        }
+        let statusmarker = '';
+        let tokenMarker = tokenMarkers.find(tm => tm.name === marker.name);        
         if (tokenMarker) {
-          if (currentMarkers.length === 1 && currentMarkers[0] === '') {
-            currentMarkers[0] = marker.name;
-          }
-          else if (currentMarkers.indexOf(marker.name) === -1) {
-            currentMarkers.push(marker.name);
-          }
-          if (stdMarkers.indexOf(marker.name) !== -1) {
-            setVirtual(tokenObj, marker);
+          statusmarker = tokenMarker.tag;
+        } else {
+          if (isStdMarker) {
+            statusmarker = marker.name;
+            setVirtual(tokenObj, marker, true);
           }
         }
-        setCharacterAttrs(characterObj, marker)
+        statusmarker += marker.badge !== 0 ? `@${marker.badge}` : '';
+        if (currentMarkers.length === 1 && currentMarkers[0] === '') {
+          currentMarkers[0] = statusmarker;
+        }
+        else if (currentMarkers.indexOf(statusmarker) === -1) {
+          currentMarkers.push(statusmarker);
+        }
       }
       if (marker.op === '-') { // unset
         if (marker.name === '*') {
-          currentMarkers.forEach(item => {
-            if (stdMarkers.indexOf(item) !== -1) {
-              setVirtual(tokenObj, { op: '-', name: item });
+          currentMarkers.forEach(marker => {
+            if (isStdMarker) {
+              setVirtual(tokenObj, marker, false);
             }
-            setCharacterAttrs(characterObj, { op: '-', name: item })
           });
           currentMarkers = [];
         }
         else {
           currentMarkers = tokenObj.get("statusmarkers").split(',');
-          currentMarkers = currentMarkers.filter(name => name !== marker.name);
-          if (stdMarkers.indexOf(marker.name) !== -1) {
-            setVirtual(tokenObj, marker);
+          currentMarkers = currentMarkers.filter(tag => tag.startsWith(marker.tag));
+          if (isStdMarker) {
+            setVirtual(tokenObj, marker, false);
           }
-          setCharacterAttrs(characterObj, marker)
         }
       }
     });
-    tokenObj.set("statusmarkers", currentMarkers.join(','));
+    tokenObj.set({ statusmarkers: currentMarkers.join(',') });
   }
 
   /**
    * Process token command
-   * !co-token [...]
+   * !co-token +set:xxxx -set:xxxx
+   *   sets the marker(s) specified in +set:
+   *   unsets the marker(s) specified in -set:
+   *   xxxx can be on or more status marker name(s), comma-delimited
+   *   each marker can be suffixed with =n (where 1 < n <9) to add a badge to the marker
+   * !co-token --set:+xxx,+yyyy,-zzzz
+   *   sets the markers prefixed with + 
+   *   unsets the markers prefixed with -
+   *   same syntax as above for badges
    * @param {object} tokenObj Roll20 token object
    * @param {object} characterObj Roll20 character object
    * @param {array<string>} command Chat command list
@@ -857,7 +865,9 @@ var COlib = COlib || function () {
         const args = cmd.split(':');
         const markers = args[1].split(',');
         markers.forEach(marker => {
-          markerOps.push({ op: cmd.slice(0,1), name: marker });
+          const badge = parseInt(marker.split('=')[1]) || 0;
+          marker = marker.split('=')[0];
+          markerOps.push({ op: cmd.slice(0,1), name: marker, badge: badge });
         });
       }
       if (cmd.toLowerCase().startsWith('--set:')) {
