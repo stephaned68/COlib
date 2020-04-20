@@ -31,7 +31,7 @@ Displays a chat menu with one button for each of the paths specified in the char
 ```
 Syntax : !co-actions --voie n
 ```
-Displays a chat menu for the specified path number. Only those ranks that have a name entered in the abilities grid are displayed. The chat menu consists of a link to a journal handout if such an handout matching the name of the rank is found, and/or an ability button if an ability named **VxRy** is found in the charsheet, where **n** is the path number and **m** is the rank number.
+Displays a chat menu for the specified path number. Only those ranks that have a name entered in the abilities grid are displayed. The chat menu consists of a link to a journal handout if such an handout matching the name of the rank is found, and/or an ability button if an ability named **VxRy** is found in the charsheet, where **x** is the path number and **y** is the rank number.
 
 ```
 Syntax : !co-actions --competences
