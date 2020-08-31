@@ -13,7 +13,7 @@ Syntax: !co-import handoutname [--charid=id]
 Where:
 
 - _handoutname_ is the name of an handout, which must start with _import._ and has Chroniques Mobiles JSON data pasted as plain text into the GM notes field
-- _--charid=id_ is a character sheet identifier, which can be passed using some Roll20 syntax such as @{_character name_|character*id} or @{\_selected*|character_id} if a token linked to a character sheet is currently selected on the VTT page.
+- _--charid=id_ is a character sheet identifier, which can be passed using some Roll20 syntax such as @{character name|character_id} or @{selected|character_id} if a token linked to a character sheet is currently selected on the VTT page.
 
 The function will parse the JSON data, will create a handout for each individual ability (or will update an existing handout that exists under the same name), then will update the source handout, renaming it to _Profil : profile name_ and inserting the list of paths and abilities ordered by rank numbers in the Notes field.
 
