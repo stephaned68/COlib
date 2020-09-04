@@ -6,18 +6,7 @@ Companion API script for COF/COC/CG Roll20 character sheets
 
 - Added function to import data into journal and optionnaly to character sheet
 
-```
-Syntax: !co-import handoutname [--charid=id]
-```
 
-Where:
-
-- _handoutname_ is the name of an handout, which must start with _import._ and has Chroniques Mobiles JSON data pasted as plain text into the GM notes field
-- _--charid=id_ is a character sheet identifier, which can be passed using some Roll20 syntax such as @{character name|character_id} or @{selected|character_id} if a token linked to a character sheet is currently selected on the VTT page.
-
-The function will parse the JSON data, will create a handout for each individual ability (or will update an existing handout that exists under the same name), then will update the source handout, renaming it to _Profil : profile name_ and inserting the list of paths and abilities ordered by rank numbers in the Notes field.
-
-To extract profile data out of the Chroniques Mobiles database and its API, output it as a JSON string and copy it to the clipboard, use the application available at https://comob-data.rpgapps.net.
 
 ## 2020-04-20 - Version 2.10
 
@@ -58,6 +47,9 @@ Displays a chat menu with one button for each of the rolls specified in the repe
 Syntax : !co-actions --attaques
 ```
 Displays a chat menu with one button for each of the rolls specified in the repeating list of attacks.
+
+---
+**Available in version 2.10**
 ```
 Syntax: !co-token +set:marker[,marker] -set:marker[,marker]
 ```
@@ -71,6 +63,11 @@ Syntax: !co-token --set:marker[,marker]
 ```
 
 Where _marker_ is a marker name, prefixed by **+** to set it or by **-** to unset it, and optionnaly suffixed by **@n** to display a badge over the token marker (1 < **n** < 9)
+
+---
+**Available in version 2.20**
+
+
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTgzMjYzODQ4Ml19
+eyJoaXN0b3J5IjpbLTE1NTQ1ODc1MDddfQ==
 -->
