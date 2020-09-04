@@ -56,7 +56,7 @@ Syntaxe : !co-import handoutname [--charid=id]
 Où :
 
 - _handoutname_ est le nom d'une aide de jeu (handout), qui doit commencer par _import._ et dont le champ GM notes a été rempli avec des données JSON issues de l'API publique de l'application Chroniques Mobiles.
-- _--charid=id_ est un identifiant de personnage, qui peut être passé à la commande à l'aide de l'une des syntaxes de Roll20 comme par exemple ```**@{character name|character_id}**``` ou ```@{selected|character_id}``` si un token lié à une fiche de personnage est actuellement sélectionné sur la page en cours.
+- _--charid=id_ est un identifiant de personnage, qui peut être passé à la commande à l'aide de l'une des syntaxes de Roll20 comme par exemple ```@{character name|character_id}``` ou ```@{selected|character_id}``` si un token lié à une fiche de personnage est actuellement sélectionné sur la page en cours.
 
 Le script analyse les données JSON trouvées dans le champ **GM Notes**, crée une aide de jeu (handout) pour chaque capacité trouvée (ou bien met à jour l'aide de jeu si elle existe déjà), puis il met à jour l'aide de jeu spécifiée, en la renommant en _Profil : nom du profil_ et en insérant dans le champ **Notes** une liste des voies et des capacités par voie, avec un lien vers les aides de jeu de capacité précédemment créés ou mises à jour.
 
