@@ -29,6 +29,9 @@ To extract profile data out of the Chroniques Mobiles database and its API, outp
 - The script has been re-worked and all the useful and not so useful functions have been documented.
 
 ## Version 1.00
+- Initial release of the script
+
+# Commands
 
 All the following chat commands require that a single token is selected by the user who invokes it
 
@@ -55,6 +58,19 @@ Displays a chat menu with one button for each of the rolls specified in the repe
 Syntax : !co-actions --attaques
 ```
 Displays a chat menu with one button for each of the rolls specified in the repeating list of attacks.
+```
+Syntax: !co-token +set:marker[,marker] -set:marker[,marker]
+```
+
+Where _marker_ is a marker name, optionnaly suffixed by **@n** to display a badge over the token marker (1 < **n** < 9)
+
+All token markers specified in the **+set:** argument will be displayed on the token as long as they are found in the list of status markers for the campaign (either standard/legacy or custom). Those specified in the **-set:** argument will be removed from the token.
+
+```
+Syntax: !co-token --set:marker[,marker]
+```
+
+Where _marker_ is a marker name, prefixed by **+** to set it or by **-** to unset it, and optionnaly suffixed by **@n** to display a badge over the token marker (1 < **n** < 9)
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTExOTcxMjY5N119
+eyJoaXN0b3J5IjpbMTgzMjYzODQ4Ml19
 -->
