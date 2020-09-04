@@ -45,18 +45,19 @@ Where _marker_ is a marker name, prefixed by **+** to set it or by **-** to unse
 
 All the following chat commands require that a single token is selected by the user who invokes it
 
+---
 ```
 Syntax : !co-actions --voies
 ```
-
 Displays a chat menu with one button for each of the paths specified in the charsheet abilities grid. Only those paths that have a name are displayed.
 
+---
 ```
 Syntax : !co-actions --voie n
 ```
-
 Displays a chat menu for the specified path number. Only those ranks that have a name entered in the abilities grid are displayed. The chat menu consists of a link to a journal handout if such an handout matching the name of the rank is found, and/or an ability button if an ability named **VxRy** is found in the charsheet, where **x** is the path number and **y** is the rank number.
 
+---
 ```
 Syntax : !co-actions --competences
 ```
@@ -68,3 +69,6 @@ Syntax : !co-actions --attaques
 ```
 
 Displays a chat menu with one button for each of the rolls specified in the repeating list of attacks.
+<!--stackedit_data:
+eyJoaXN0b3J5IjpbLTIxMTM3NTIyNjBdfQ==
+-->
