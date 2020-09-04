@@ -1,19 +1,18 @@
 # COlib
 
-Companion API script for COF/COC/CG Roll20 character sheets
+Script API Compagnon pour les fiches de personnages COF/COC/CG pour Roll20
 
 ## 2020-09-01 - Version 2.20
 
-- Added function to import data into journal and optionnaly to character sheet
+- Ajout d'une fonction pour importer des données de profils et capacités sous forme d'aides de jeu (handouts) dans le journal et optionnellement dans la fiche de personnage.
 
 ## 2020-04-20 - Version 2.10
 
-- Added functions to set token markers
-
+- Ajout de fonctions pour affecter des marqueurs aux jetons (token markers)
 
 ## Version 2.00
 
-- The script has been re-worked and all the useful and not so useful functions have been documented.
+- Le script a été refactorisé et toutes ses fonctions utiles et moins utiles ont été documentées.
 
 ## Version 1.00
-- Initial release of the script
+- Version initiale
