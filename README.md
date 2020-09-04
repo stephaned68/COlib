@@ -23,19 +23,6 @@ To extract profile data out of the Chroniques Mobiles database and its API, outp
 
 - Added functions to set token markers
 
-```
-Syntax: !co-token +set:marker[,marker] -set:marker[,marker]
-```
-
-Where _marker_ is a marker name, optionnaly suffixed by **@n** to display a badge over the token marker (1 < **n** < 9)
-
-All token markers specified in the **+set:** argument will be displayed on the token as long as they are found in the list of status markers for the campaign (either standard/legacy or custom). Those specified in the **-set:** argument will be removed from the token.
-
-```
-Syntax: !co-token --set:marker[,marker]
-```
-
-Where _marker_ is a marker name, prefixed by **+** to set it or by **-** to unset it, and optionnaly suffixed by **@n** to display a badge over the token marker (1 < **n** < 9)
 
 ## Version 2.00
 
@@ -69,5 +56,5 @@ Syntax : !co-actions --attaques
 ```
 Displays a chat menu with one button for each of the rolls specified in the repeating list of attacks.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIwMDUzMjg0NjBdfQ==
+eyJoaXN0b3J5IjpbLTExOTcxMjY5N119
 -->
