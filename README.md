@@ -2,6 +2,8 @@
 
 Script API Compagnon pour les fiches de personnages COF/COC/CG pour Roll20
 
+[Documentation](https://stephaned68.github.io/COlib/)
+
 ## 2020-09-01 - Version 2.20
 
 - Ajout d'une fonction pour importer des données de profils et capacités sous forme d'aides de jeu (handouts) dans le journal et optionnellement dans la fiche de personnage.
