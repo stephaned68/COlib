@@ -1,12 +1,12 @@
 # Commandes
 
-Toutes les commandes marquées d'un :hash: nécessitent qu'un et un seul token soit sélectionné par l'utilisateur qui l'invoque (généralement le token représentant son personnage).
+Toutes les commandes marquées d'un :ballot_box_with_check: nécessitent qu'un et un seul token soit sélectionné par l'utilisateur qui l'invoque (généralement le token représentant son personnage).
 
 ---
 ```
 Syntaxe : !co-actions --voies 
 ```
-:hash: Affiche un menu dans le chat avec un bouton pour chaque voie dont le nom est renseigné dans la grille des capacités de la fiche de personnage.
+:ballot_box_with_check: Affiche un menu dans le chat avec un bouton pour chaque voie dont le nom est renseigné dans la grille des capacités de la fiche de personnage.
 
 ---
 ```
@@ -18,13 +18,13 @@ Syntaxe : !co-actions --voie n
 ```
 Syntaxe : !co-actions --competences
 ```
-:hash: Affiche un menu dans le chat avec un bouton pour chacun des jets spécifiés dans la liste des jets de capacités (sous la grille des capacités).
+:ballot_box_with_check: Affiche un menu dans le chat avec un bouton pour chacun des jets spécifiés dans la liste des jets de capacités (sous la grille des capacités).
 
 ---
 ```
 Syntaxe : !co-actions --attaques
 ```
-:hash: Affiche un menu dans le chat avec un bouton pour chacun des jets spécifiés dans la liste des attaques.
+:ballot_box_with_check: Affiche un menu dans le chat avec un bouton pour chacun des jets spécifiés dans la liste des attaques.
 
 ---
 **Disponible en version 2.10**
@@ -32,7 +32,7 @@ Syntaxe : !co-actions --attaques
 Syntaxe : !co-token +set:marker[,marker] -set:marker[,marker]
 ```
 
-:hash: Ajoute ou retire un ou plusieurs marqueurs au token.
+:ballot_box_with_check: Ajoute ou retire un ou plusieurs marqueurs au token.
 
 Où _marker_ est un nom de marqueur, optionnellement suffixé par **@n** pour afficher un badge par dessus le marqueur (avec **n** compris entre 1 et 9).
 
@@ -42,7 +42,7 @@ Tous les marqueurs spécifiés dans le paramètre **+set:** sont affichés sur l
 Syntaxe : !co-token --set:marker[,marker]
 ```
 
-:hash: Ajoute ou retire un ou plusieurs marqueurs au token.
+:ballot_box_with_check: Ajoute ou retire un ou plusieurs marqueurs au token.
 
 Où _marker_ est un nom de marqueur, préfixé par **+** pour l'ajouter au token ou par **-** pour le retirer, et optionnellement suffixé par **@n** pour afficher un badge par dessus le marqueur (avec **n** compris entre 1 et 9).
 
