@@ -55,20 +55,19 @@ Displays a chat menu with one button for each of the paths specified in the char
 ```
 Syntax : !co-actions --voie n
 ```
-Displays a chat menu for the specified path number. Only those ranks that have a name entered in the abilities grid are displayed. The chat menu consists of a link to a journal handout if such an handout matching the name of the rank is found, and/or an ability button if an ability named **VxRy** is found in the charsheet, where **x** is the path number and **y** is the rank number.
+Displays a chat menu for the specified path number. Only those ranks that have a name entered in the abilities grid are displayed. The chat menu consists of a link to a journal handout if such an handout matching the name of the rank is found, and/or an ability button if either an ability named **VxRy** is found in the charsheet, where **x** is the path number and **y** is the rank number, or if an ability roll linked 
 
 ---
 ```
 Syntax : !co-actions --competences
 ```
-
 Displays a chat menu with one button for each of the rolls specified in the repeating list of abilities (under the ability grid)
 
+---
 ```
 Syntax : !co-actions --attaques
 ```
-
 Displays a chat menu with one button for each of the rolls specified in the repeating list of attacks.
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbLTIxMTM3NTIyNjBdfQ==
+eyJoaXN0b3J5IjpbNTM0OTg2MTNdfQ==
 -->
