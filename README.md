@@ -77,8 +77,9 @@ Where:
 The function will parse the JSON data, will create a handout for each individual ability (or will update an existing handout that exists under the same name), then will update the source handout, renaming it to _Profil : profile name_ and inserting the list of paths and abilities ordered by rank numbers in the Notes field.
 
 To extract profile data out of the Chroniques Mobiles database and its API, output it as a JSON string and copy it to the clipboard, use the [Export Chroniques Mobiles](http://comob-data.rpgapps.net) application. 
-[Click here for more details](https://stephaned68.github.io/ChroniquesContemporaines/import-abilities).
+
+[Click here for more details](https://stephaned68.github.io/ChroniquesContemporaines/import-abilities) (in french).
 
 <!--stackedit_data:
-eyJoaXN0b3J5IjpbMTUyMjA3ODI5NF19
+eyJoaXN0b3J5IjpbNTQyMjExMzMyXX0=
 -->
