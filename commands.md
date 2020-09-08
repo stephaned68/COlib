@@ -12,7 +12,7 @@ Syntaxe : !co-actions --voies
 ```
 Syntaxe : !co-actions --voie n
 ```
-[x] Affiche un menu dans le chat pour les capacités de la voie spécifiée par **nn** (où n est compris entre 1 et 9). Ce menu contient une entrée pour chaque capacité possédée par le personnage (cochée dans la grille des capacités). Chaque entrée consiste en un lien vers le journal si le script trouve une aide de jeu portant le même nom que la capacité, et éventuellement un bouton permettant de faire un jet dans le chat. Pour ce faire, le script cherche dans la fiche de personnage, soit une **ability** nommée **VxRy** (où **x** est le numéro de la voie et **y** est le rang dans la voie), soit un jet de capacité qui a été préalablement lié au numéro de voie et au rang.
+[x] Affiche un menu dans le chat pour les capacités de la voie spécifiée, où **n** est compris entre 1 et 9. Ce menu contient une entrée pour chaque capacité possédée par le personnage (cochée dans la grille des capacités). Chaque entrée consiste en un lien vers le journal si le script trouve une aide de jeu portant le même nom que la capacité, et éventuellement un bouton permettant de faire un jet dans le chat. Pour ce faire, le script cherche dans la fiche de personnage, soit une **ability** nommée **VxRy** (où **x** est le numéro de la voie et **y** est le rang dans la voie), soit un jet de capacité qui a été préalablement lié au numéro de voie et au rang.
 
 ---
 ```
