@@ -2,7 +2,7 @@
  * COlib : Chronique Oubliées library
  */
 
-var COlib_version = 2.2;
+var COlib_version = 2.21;
 
 var COlib =
   COlib ||
@@ -71,15 +71,6 @@ var COlib =
     }
 
     /**
-     * Return the number of rows in a repeating section
-     * @param {string} charId
-     * @param {string} section
-     */
-    function repeatCount(charId, section) {
-      return repeatRowIds(charId, section).length;
-    }
-
-    /**
      * Return all the row ids for a given section
      * @param {string} charId
      * @param {string} section
@@ -98,6 +89,28 @@ var COlib =
         }
       }
       return rowIds;
+    }
+
+    /**
+     * Return the ordered list of ids for a section
+     * @param {string} sectionName : section name
+     * @param {function} callback : callback function to process the ids
+     */
+    function getSectionIDsOrdered(sectionName, callback) {
+      'use strict';
+      getAttrs([`_reporder_${sectionName}`], function (v) {
+        getSectionIDs(sectionName, function (idArray) {
+          let reporderArray = v[`_reporder_${sectionName}`]
+              ? v[`_reporder_${sectionName}`].toLowerCase().split(',')
+              : [],
+            ids = [
+              ...new Set(
+                reporderArray.filter((x) => idArray.includes(x)).concat(idArray)
+              ),
+            ];
+          callback(ids);
+        });
+      });
     }
 
     /**
@@ -153,6 +166,30 @@ var COlib =
     }
 
     /**
+     * Return the fully qualified name of a roll for an ability identifier (VxRy)
+     * @param {string} charId
+     * @param {string} abilityId
+     */
+    function findAbilityRoll(charId, abilityId) {
+      const rowIds = repeatRowIds(charId, 'jetcapas');
+      let abilityRoll = '';
+      for (const rowId of rowIds) {
+        const roll = findObjs({
+          _type: 'attribute',
+          _characterid: charId,
+          name: `repeating_jetcapas_${rowId}_jetcapavr`,
+        });
+        if (roll.length === 1) {
+          if (roll[0].get('current') === abilityId.toLowerCase()) {
+            abilityRoll = `repeating_jetcapas_${rowId}_pjcapa`;
+            break;
+          }
+        }
+      }
+      return abilityRoll;
+    }
+
+    /**
      * Return the text for an ability chat button
      * @param {string} charId
      * @param {string} name
@@ -170,19 +207,28 @@ var COlib =
       abilityObj
     ) {
       let button = '';
+      let buttonRoll = '';
       if (!handoutObj) handoutObj = findHandout(name);
       if (!abilityObj) abilityObj = findAbility(charId, ability);
       if (abilityObj) {
         if (abilityObj.get('action') != '') {
-          button += '[';
-          if (handoutObj) {
-            button += 'Jet';
-          } else {
-            if (sequence > 0) button += sequence.toString() + '. ';
-            button += name;
-          }
-          button += `](~${charId}|${ability})`;
+          buttonRoll = ability;
         }
+      } else {
+        const abilityRoll = findAbilityRoll(charId, ability);
+        if (abilityRoll) {
+          buttonRoll = abilityRoll;
+        }
+      }
+      if (buttonRoll !== '') {
+        button += '[';
+        if (handoutObj) {
+          button += 'Jet';
+        } else {
+          if (sequence > 0) button += sequence.toString() + '. ';
+          button += name;
+        }
+        button += `](~${charId}|${buttonRoll})`;
       }
       return button;
     }
@@ -378,7 +424,7 @@ var COlib =
 
       let rowIds = [];
       switch (args[0]) {
-        // !co-actions --voies : liste des voies
+        // !colib actions --voies : liste des voies
         case '--voies':
           const voies = [
             'voie1nom',
@@ -412,7 +458,7 @@ var COlib =
           }
           break;
 
-        // !co-actions --voie # : liste des capacités voie #
+        // !colib actions --voie # : liste des capacités voie #
         case '--voie':
           const voie = 'voie' + args[1] + '-';
           const rangs = [
@@ -423,6 +469,12 @@ var COlib =
             voie + '5',
           ];
           rangs.forEach((rangAttr, rang) => {
+            // check if character has ability
+            const hasAbility = getAttrByName(
+              charId,
+              rangAttr.replace('voie', 'v').replace('-', 'r')
+            );
+            if (hasAbility !== '1') return;
             // parse ability title from description, if any
             let rangInfo = getAttrByName(charId, rangAttr);
             if (rangInfo.indexOf('\n') !== -1)
@@ -462,6 +514,15 @@ var COlib =
                       handoutObj,
                       abilityObj
                     );
+                  } else {
+                    chatRang += abilityButton(
+                      charId,
+                      rangLabel,
+                      abilityName,
+                      rang + 1,
+                      handoutObj,
+                      null
+                    );
                   }
                 }
               }
@@ -478,7 +539,7 @@ var COlib =
           }
           break;
 
-        // !co-actions --competences
+        // !colib actions --competences
         case '--competences':
           if (attrs.capaRpt === '') break;
           rowIds = repeatRowIds(charId, attrs.capaRpt);
@@ -514,7 +575,7 @@ var COlib =
           }
           break;
 
-        // !co-actions --attaques
+        // !colib actions --attaques
         case '--attaques':
           if (attrs.atkRpt === '') break;
           rowIds = repeatRowIds(charId, attrs.atkRpt);
@@ -617,7 +678,7 @@ var COlib =
 
     /**
      * Create equipment handouts for a category from JSON data
-     * !co-import equipment.categoryName
+     * !colib import equipment.categoryName
      * @param {string} data
      */
     function importGear(data) {
@@ -781,7 +842,7 @@ var COlib =
 
     /**
      * Retrieve handout content
-     * !co-import handoutName
+     * !colib import handoutName
      * @param {array<string>} args Chat command arguments
      */
     function readHandout(args) {
@@ -820,7 +881,7 @@ var COlib =
 
     /**
      * Ping & move map to starting point
-     * !co-ping [...]
+     * !colib ping [...]
      */
     function pingStartToken() {
       const startToken = 'GroupePJs';
@@ -960,12 +1021,12 @@ var COlib =
 
     /**
      * Process token command
-     * !co-token +set:xxxx -set:xxxx
+     * !colib token +set:xxxx -set:xxxx
      *   sets the marker(s) specified in +set:
      *   unsets the marker(s) specified in -set:
      *   xxxx can be on or more status marker name(s), comma-delimited
      *   each marker can be suffixed with =n (where 1 < n <9) to add a badge to the marker
-     * !co-token --set:+xxx,+yyyy,-zzzz
+     * !colib token --set:+xxx,+yyyy,-zzzz
      *   sets the markers prefixed with +
      *   unsets the markers prefixed with -
      *   same syntax as above for badges
@@ -1000,17 +1061,54 @@ var COlib =
     }
 
     /**
+     * Process stats roll command
+     * !colib stats value1 value2 value3
+     *   Determine the six stats values from 2d6 rolls
+     *   Each 2d6 roll value is added to 6 to yield one stat value
+     *   and subtracted from 19 to yield another stat value
+     * exemple of use :
+     *   !colib stats [[2d6]] [[2d6]] [[2d6]]
+     * @param {array<string>} args Chat command arguments
+     */
+    function statRolls(args) {
+      let rollValues = [];
+      for (const argv of args) {
+        if (argv > 1 && argv < 13) rollValues.push(argv);
+      }
+      while (rollValues.length < 3) {
+        rollValues.push(randomInteger(6) + randomInteger(6));
+      }
+
+      let statValues = [];
+      for (const roll of rollValues) {
+        statValues.push(roll + 6);
+        statValues.push(19 - roll);
+      }
+
+      let msge =
+        '&{template:co1} {{subtags=Tirage}} {{name=Caractéristiques}} {{desc=';
+      for (const stat of statValues) {
+        msge += `[[${stat}]] `;
+      }
+      msge += '}}';
+      sendChat('COlib', msge);
+    }
+
+    /**
      * Display script configuration
      */
     function configDisplay() {
-      sendChat('COlib', `/w gm Univers : ${state.COlib.universe}`);
-      sendChat('COlib', `/w gm Menus murmurés : ${state.COlib.whisper}`);
-      sendChat('COlib', `/w gm Logs : ${state.COlib.logging}`);
+      sendChat('COlib', `/w gm Univers (--universe) : ${state.COlib.universe}`);
+      sendChat(
+        'COlib',
+        `/w gm Menus murmurés (--whisper) : ${state.COlib.whisper}`
+      );
+      sendChat('COlib', `/w gm Logs (--log) : ${state.COlib.logging}`);
     }
 
     /**
      * Process configuration command
-     * !co-config [...]
+     * !colib config [...]
      * @param {array<string>} args Chat command arguments
      */
     function configCOlib(args) {
@@ -1019,7 +1117,7 @@ var COlib =
         return;
       }
       switch (args[0]) {
-        case '--u':
+        case '--universe':
           state.COlib.universe = args[1].toUpperCase();
           configDisplay();
           break;
@@ -1058,6 +1156,11 @@ var COlib =
     /**
      * Process API chat commands
      * @param {object} msg Roll20 chat message object
+     *
+     * Chat command can be either :
+     * !co-<action> <...args...>
+     * or :
+     * !colib action <...args...>
      */
     function apiCommand(msg) {
       msg.content = msg.content.replace(/\s+/g, ' '); //remove duplicate whites
@@ -1066,15 +1169,22 @@ var COlib =
       let character = null;
       let token = null;
 
-      switch (command) {
-        case '!co-debug':
+      let action = '';
+      if (command === '!colib') {
+        action = args.shift();
+      } else {
+        action = command.replace('!co-', '');
+      }
+
+      switch (action) {
+        case 'debug':
           log([command, ...args].join(' '));
           log(singleToken(msg, tokens));
           break;
-        case '!co-config':
+        case 'config':
           configCOlib(args);
           break;
-        case '!co-actions':
+        case 'actions':
           character = getCharacter(getCharacterId(args));
           // check if token selected
           if (!character) {
@@ -1095,19 +1205,22 @@ var COlib =
             );
           }
           break;
-        case '!co-import':
+        case 'import':
           readHandout(args);
           break;
-        case '!co-ping':
+        case 'ping':
           pingStartToken();
           break;
-        case '!co-token':
+        case 'token':
           token = singleToken(msg, tokens);
           if (!token) {
             break;
           }
           character = getCharacterFromToken(token);
           tokenMarkers(token, character, args);
+          break;
+        case 'stats':
+          statRolls(args);
           break;
         default:
           break;
