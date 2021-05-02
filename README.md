@@ -2,6 +2,22 @@
 
 Companion API script for COF/COC/CG Roll20 character sheets
 
+## 2021-05-02 - Version 2.3
+
+Added logic to update starship crew abilities and related ranks values
+
+Whenever a starship sheet is opened, the worker script sets the POSTES_EQ atribute to _"update"_
+
+COlib sets an event handler to track changes to this attribute. Whenever it has the _"update"_ value :
+
+- All starship battle stations (PIL, MOT, SEN, ORD, and attack entries for CAN) are scanned for a character name
+- If the corresponding character sheet is found, the DEX (PIL, CAN) or INT (MOT, SEN, ORD) attribute values are retrieved
+- The ranks are retrieved as follows (case insensitive) :
+  - From a skill branch containing _"pilotage"_ in its name for the character at the PIL station
+  - From a skill branch containing _"moteurs"_ in its name for the character at the MOT station
+  - From a skill branch containing _"electronique"_ in its name for the character at the SEN and ORD stations
+  - From a skill branch containing _"armes lourdes"_ in its name for the character(s) at the CAN station
+
 ## 2021-02-16 - Version 2.21
 
 - All function can be run using either

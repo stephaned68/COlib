@@ -2,7 +2,7 @@
  * COlib : Chronique Oubliées library
  */
 
-var COlib_version = 2.21;
+var COlib_version = 2.3;
 
 var COlib =
   COlib ||
@@ -166,13 +166,15 @@ var COlib =
     }
 
     /**
-     * Return the fully qualified name of a roll for an ability identifier (VxRy)
+     * Return an object with 2 properties :
+     * - roll: the fully qualified name of a roll for an ability identifier (VxRy)
+     * - button: the text to display on the roll button
      * @param {string} charId
      * @param {string} abilityId
      */
     function findAbilityRoll(charId, abilityId) {
       const rowIds = repeatRowIds(charId, 'jetcapas');
-      let abilityRoll = '';
+      let abilityRollObj = null;
       for (const rowId of rowIds) {
         const roll = findObjs({
           _type: 'attribute',
@@ -181,12 +183,20 @@ var COlib =
         });
         if (roll.length === 1) {
           if (roll[0].get('current') === abilityId.toLowerCase()) {
-            abilityRoll = `repeating_jetcapas_${rowId}_pjcapa`;
+            abilityRollObj = {
+              roll: `repeating_jetcapas_${rowId}_pjcapa`,
+              button: '🎲',
+            };
             break;
           }
+        } else if (roll.length === 0) {
+          abilityRollObj = {
+            roll: abilityId.toLowerCase(),
+            button: '💬',
+          };
         }
       }
-      return abilityRoll;
+      return abilityRollObj;
     }
 
     /**
@@ -208,6 +218,7 @@ var COlib =
     ) {
       let button = '';
       let buttonRoll = '';
+      let abilityRoll = {};
       if (!handoutObj) handoutObj = findHandout(name);
       if (!abilityObj) abilityObj = findAbility(charId, ability);
       if (abilityObj) {
@@ -215,15 +226,15 @@ var COlib =
           buttonRoll = ability;
         }
       } else {
-        const abilityRoll = findAbilityRoll(charId, ability);
+        abilityRoll = findAbilityRoll(charId, ability);
         if (abilityRoll) {
-          buttonRoll = abilityRoll;
+          buttonRoll = abilityRoll.roll;
         }
       }
       if (buttonRoll !== '') {
         button += '[';
         if (handoutObj) {
-          button += 'Jet';
+          button += abilityRoll.button;
         } else {
           if (sequence > 0) button += sequence.toString() + '. ';
           button += name;
@@ -475,10 +486,20 @@ var COlib =
               rangAttr.replace('voie', 'v').replace('-', 'r')
             );
             if (hasAbility !== '1') return;
-            // parse ability title from description, if any
-            let rangInfo = getAttrByName(charId, rangAttr);
-            if (rangInfo.indexOf('\n') !== -1)
-              rangInfo = rangInfo.split('\n')[0];
+            // get ability title
+            const rangTitle = getAttrByName(
+              charId,
+              rangAttr.replace('-', '-t')
+            );
+            let rangInfo = '';
+            // parse from description if no title found
+            if (rangTitle !== '') {
+              rangInfo = rangTitle;
+            } else {
+              rangInfo = getAttrByName(charId, rangAttr);
+              if (rangInfo.indexOf('\n') !== -1)
+                rangInfo = rangInfo.split('\n')[0];
+            }
             // can have multiple ';' separated abilities
             const rangData = rangInfo.split(';');
             let chatRang = '';
@@ -1228,9 +1249,138 @@ var COlib =
       return;
     }
 
+    /**
+     * Update the starship attributes for crew abilities
+     * @param {object} params update settings
+     * @returns void
+     */
+    function updateCrew(params) {
+      // get the attribute object for the crew name
+      const crewName = findOrNewAttribute({
+        _characterid: params.shipId,
+        name: params.nameAttr,
+      }).get('current');
+      // search for the corresponding character object
+      const crewChar = findObjs({
+        _type: 'character',
+        name: crewName,
+      });
+      if (crewChar.length == 0) {
+        log(`Could not find character for '${crewName}'`);
+        return;
+      }
+      const crewCharId = crewChar[0].get('_id');
+      // get the caracteristic attribute object for ship
+      const shipCarac = findOrNewAttribute({
+        _characterid: params.shipId,
+        name: params.caracAttr.ship,
+      });
+      // get the crew characteristic object
+      const crewCarac = findOrNewAttribute({
+        _characterid: crewCharId,
+        name: params.caracAttr.crew,
+      }).get('current');
+      // set the ship value to the crew value
+      shipCarac.set('current', crewCarac);
+      log(`Set '${crewCarac}' to ${shipCarac.get('name')}`);
+      // get the bonus attribute object for ship
+      const shipBonus = findOrNewAttribute({
+        _characterid: params.shipId,
+        name: params.bonusAttr.ship,
+      });
+      // get the crew ability paths
+      const attrPath = findObjs({
+        _type: 'attribute',
+        _characterid: crewCharId,
+      })
+        .filter(
+          (attrObj) =>
+            attrObj.get('name').startsWith('voie') &&
+            attrObj.get('name').endsWith('nom')
+        )
+        .filter(
+          (attrObj) =>
+            attrObj
+              .get('current')
+              .toLowerCase()
+              .indexOf(params.bonusAttr.crew) != -1
+        )[0];
+      if (attrPath === undefined) {
+        log(`Could not find skill branch for '${params.bonusAttr.crew}'`);
+        return;
+      }
+      const pathNr = attrPath.get('name').substring(4, 5);
+      // get the crew rank attribute
+      const rankAttr = findObjs({
+        _type: 'attribute',
+        _characterid: crewCharId,
+        name: `RANG_VOIE${pathNr}`,
+      })[0];
+      if (rankAttr === undefined) {
+        log(`Could not find rank for '${params.bonusAttr.crew}'`);
+        return;
+      }
+      // set the ship value to the crew value
+      shipBonus.set('current', rankAttr.get('current'));
+      log(`Set '${rankAttr.get('current')}' to ${shipBonus.get('name')}`);
+    }
+
+    function updateCrewValues(shipId) {
+      updateCrew({
+        shipId: shipId,
+        nameAttr: 'POSTE_PIL_NOM',
+        caracAttr: { ship: 'POSTE_PIL_DEX', crew: 'DEX_TEST' },
+        bonusAttr: { ship: 'POSTE_PIL_BONUS', crew: 'pilotage' },
+      });
+      updateCrew({
+        shipId: shipId,
+        nameAttr: 'POSTE_MOT_NOM',
+        caracAttr: { ship: 'POSTE_MOT_INT', crew: 'INT_TEST' },
+        bonusAttr: { ship: 'POSTE_MOT_BONUS', crew: 'moteurs' },
+      });
+      updateCrew({
+        shipId: shipId,
+        nameAttr: 'POSTE_SEN_NOM',
+        caracAttr: { ship: 'POSTE_SEN_INT', crew: 'INT_TEST' },
+        bonusAttr: { ship: 'POSTE_SEN_BONUS', crew: 'electronique' },
+      });
+      updateCrew({
+        shipId: shipId,
+        nameAttr: 'POSTE_ORD_NOM',
+        caracAttr: { ship: 'POSTE_ORD_INT', crew: 'INT_TEST' },
+        bonusAttr: { ship: 'POSTE_ORD_BONUS', crew: 'electronique' },
+      });
+      const attks = findObjs({
+        _type: 'attribute',
+        _characterid: shipId,
+      }).filter((attrObj) =>
+        attrObj.get('name').startsWith('repeating_armesv')
+      );
+      const attkIds = [];
+      for (const attk of attks) {
+        const attkId = attk.get('name').split('_')[2];
+        if (attkIds.indexOf(attkId) === -1) attkIds.push(attkId);
+      }
+      attkIds.forEach((attkId) => {
+        updateCrew({
+          shipId: shipId,
+          nameAttr: `repeating_armesv_${attkId}_armecan_nom`,
+          caracAttr: {
+            ship: `repeating_armesv_${attkId}_armecan_dex`,
+            crew: 'DEX_TEST',
+          },
+          bonusAttr: {
+            ship: `repeating_armesv_${attkId}_armecan_bonus`,
+            crew: 'armes lourdes',
+          },
+        });
+      });
+    }
+
     return {
       apiCommand: apiCommand,
       pingStartToken: pingStartToken,
+      updateCrewValues: updateCrewValues,
     };
   })();
 
@@ -1266,5 +1416,15 @@ on('ready', function () {
     setTimeout(function () {
       COlib.pingStartToken();
     }, 1500);
+  });
+
+  on('change:attribute', function (obj) {
+    if (obj.get('name').toLowerCase() !== 'postes_eq') return;
+    // if attr_EQUIPAGE has changed...
+    if (obj.get('current') !== 'update') return;
+    // if the starship sheet has been opened, update the crew values...
+    const shipId = obj.get('_characterid');
+    COlib.updateCrewValues(shipId);
+    obj.set('current', '');
   });
 });
