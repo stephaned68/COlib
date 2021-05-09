@@ -1254,7 +1254,7 @@ var COlib =
      * @param {object} params update settings
      * @returns void
      */
-    function updateCrew(params) {
+    function updateShipCrew(params) {
       // get the attribute object for the crew name
       const crewName = findOrNewAttribute({
         _characterid: params.shipId,
@@ -1325,56 +1325,125 @@ var COlib =
       log(`Set '${rankAttr.get('current')}' to ${shipBonus.get('name')}`);
     }
 
-    function updateCrewValues(shipId) {
-      updateCrew({
-        shipId: shipId,
-        nameAttr: 'POSTE_PIL_NOM',
-        caracAttr: { ship: 'POSTE_PIL_DEX', crew: 'DEX_TEST' },
-        bonusAttr: { ship: 'POSTE_PIL_BONUS', crew: 'pilotage' },
-      });
-      updateCrew({
-        shipId: shipId,
-        nameAttr: 'POSTE_MOT_NOM',
-        caracAttr: { ship: 'POSTE_MOT_INT', crew: 'INT_TEST' },
-        bonusAttr: { ship: 'POSTE_MOT_BONUS', crew: 'moteurs' },
-      });
-      updateCrew({
-        shipId: shipId,
-        nameAttr: 'POSTE_SEN_NOM',
-        caracAttr: { ship: 'POSTE_SEN_INT', crew: 'INT_TEST' },
-        bonusAttr: { ship: 'POSTE_SEN_BONUS', crew: 'electronique' },
-      });
-      updateCrew({
-        shipId: shipId,
-        nameAttr: 'POSTE_ORD_NOM',
-        caracAttr: { ship: 'POSTE_ORD_INT', crew: 'INT_TEST' },
-        bonusAttr: { ship: 'POSTE_ORD_BONUS', crew: 'electronique' },
-      });
-      const attks = findObjs({
-        _type: 'attribute',
-        _characterid: shipId,
-      }).filter((attrObj) =>
-        attrObj.get('name').startsWith('repeating_armesv')
-      );
-      const attkIds = [];
-      for (const attk of attks) {
-        const attkId = attk.get('name').split('_')[2];
-        if (attkIds.indexOf(attkId) === -1) attkIds.push(attkId);
+    /**
+     * Update mecha attributes for crew abilities
+     * @param {object} params update settings
+     * @returns void
+     */
+    function updateMechaCrew(params) {
+      let mechaCar = params.carAttr;
+      if (mechaCar !== 'int') {
+        const mechaCarObj = findObjs({
+          _type: 'attribute',
+          _characterid: params.shipId,
+          _name: params.carAttr,
+        })[0];
+        if (mechaCarObj === undefined) {
+          return;
+        }
+        mechaCar = mechaCarObj.get('current');
       }
-      attkIds.forEach((attkId) => {
-        updateCrew({
-          shipId: shipId,
-          nameAttr: `repeating_armesv_${attkId}_armecan_nom`,
-          caracAttr: {
-            ship: `repeating_armesv_${attkId}_armecan_dex`,
-            crew: 'DEX_TEST',
-          },
-          bonusAttr: {
-            ship: `repeating_armesv_${attkId}_armecan_bonus`,
-            crew: 'armes lourdes',
-          },
-        });
-      });
+      const crewAttr = {
+        dex: { caracAttr: 'FOR_TEST', bonusAttr: 'pilotage' },
+        int: { caracAttr: 'PER_TEST', bonusAttr: 'armes lourdes' },
+        per: { caracAttr: 'INT_TEST', bonusAttr: 'electronique' },
+        cha: { caracAttr: 'INT_TEST', bonusAttr: 'moteurs' },
+      };
+      params.caracAttr.crew = crewAttr[mechaCar].caracAttr;
+      params.bonusAttr.crew = crewAttr[mechaCar].bonusAttr;
+      updateShipCrew(params);
+    }
+
+    function updateCrewValues(vehicleType, shipId) {
+      let attks = [];
+      const attkIds = [];
+      switch (vehicleType) {
+        case 'vaisseau':
+          updateShipCrew({
+            shipId: shipId,
+            nameAttr: 'POSTE_PIL_NOM',
+            caracAttr: { ship: 'POSTE_PIL_DEX', crew: 'DEX_TEST' },
+            bonusAttr: { ship: 'POSTE_PIL_BONUS', crew: 'pilotage' },
+          });
+          updateShipCrew({
+            shipId: shipId,
+            nameAttr: 'POSTE_MOT_NOM',
+            caracAttr: { ship: 'POSTE_MOT_INT', crew: 'INT_TEST' },
+            bonusAttr: { ship: 'POSTE_MOT_BONUS', crew: 'moteurs' },
+          });
+          updateShipCrew({
+            shipId: shipId,
+            nameAttr: 'POSTE_SEN_NOM',
+            caracAttr: { ship: 'POSTE_SEN_INT', crew: 'INT_TEST' },
+            bonusAttr: { ship: 'POSTE_SEN_BONUS', crew: 'electronique' },
+          });
+          updateShipCrew({
+            shipId: shipId,
+            nameAttr: 'POSTE_ORD_NOM',
+            caracAttr: { ship: 'POSTE_ORD_INT', crew: 'INT_TEST' },
+            bonusAttr: { ship: 'POSTE_ORD_BONUS', crew: 'electronique' },
+          });
+          attks = findObjs({
+            _type: 'attribute',
+            _characterid: shipId,
+          }).filter((attrObj) =>
+            attrObj.get('name').startsWith('repeating_armesv')
+          );
+          for (const attk of attks) {
+            const attkId = attk.get('name').split('_')[2];
+            if (attkIds.indexOf(attkId) === -1) attkIds.push(attkId);
+          }
+          attkIds.forEach((attkId) => {
+            updateShipCrew({
+              shipId: shipId,
+              nameAttr: `repeating_armesv_${attkId}_armecan_nom`,
+              caracAttr: {
+                ship: `repeating_armesv_${attkId}_armecan_dex`,
+                crew: 'DEX_TEST',
+              },
+              bonusAttr: {
+                ship: `repeating_armesv_${attkId}_armecan_bonus`,
+                crew: 'armes lourdes',
+              },
+            });
+          });
+          break;
+        case 'mecha':
+          updateMechaCrew({
+            shipId: shipId,
+            nameAttr: 'mec_crew1_name',
+            carAttr: 'mec_crew1_car',
+            caracAttr: { ship: 'mec_crew1_bonus' },
+            bonusAttr: { ship: 'mec_crew1_rank' },
+          });
+          updateMechaCrew({
+            shipId: shipId,
+            nameAttr: 'mec_crew2_name',
+            carAttr: 'mec_crew2_car',
+            caracAttr: { ship: 'mec_crew2_bonus' },
+            bonusAttr: { ship: 'mec_crew2_rank' },
+          });
+          attks = findObjs({
+            _type: 'attribute',
+            _characterid: shipId,
+          }).filter((attrObj) =>
+            attrObj.get('name').startsWith('repeating_mecatk')
+          );
+          for (const attk of attks) {
+            const attkId = attk.get('name').split('_')[2];
+            if (attkIds.indexOf(attkId) === -1) attkIds.push(attkId);
+          }
+          attkIds.forEach((attkId) => {
+            updateMechaCrew({
+              shipId: shipId,
+              nameAttr: `repeating_mecatk_${attkId}_atkcrew`,
+              carAttr: 'int',
+              caracAttr: { ship: `repeating_mecatk_${attkId}_crewint_bonus` },
+              bonusAttr: { ship: `repeating_mecatk_${attkId}_crewint_rank` },
+            });
+          });
+          break;
+      }
     }
 
     return {
@@ -1421,10 +1490,11 @@ on('ready', function () {
   on('change:attribute', function (obj) {
     if (obj.get('name').toLowerCase() !== 'postes_eq') return;
     // if attr_EQUIPAGE has changed...
-    if (obj.get('current') !== 'update') return;
-    // if the starship sheet has been opened, update the crew values...
+    const update = obj.get('current').split(':');
+    if ((update[0] || '') !== 'update') return;
+    // if the starship or mecha sheet has been opened, update the crew values...
     const shipId = obj.get('_characterid');
-    COlib.updateCrewValues(shipId);
+    COlib.updateCrewValues(update[1], shipId);
     obj.set('current', '');
   });
 });
