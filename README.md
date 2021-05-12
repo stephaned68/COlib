@@ -2,11 +2,15 @@
 
 Companion API script for COF/COC/CG Roll20 character sheets
 
+## 2021-05-12 - Version 2.4
+
+Added logic to update mecha crew abilities and related ranks values
+
 ## 2021-05-02 - Version 2.3
 
 Added logic to update starship crew abilities and related ranks values
 
-Whenever a starship sheet is opened, the worker script sets the POSTES_EQ atribute to _"update"_
+Whenever a starship sheet is opened, the worker script sets the POSTES*EQ atribute to *"update"\_
 
 COlib sets an event handler to track changes to this attribute. Whenever it has the _"update"_ value :
 

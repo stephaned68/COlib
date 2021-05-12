@@ -2,7 +2,7 @@
  * COlib : Chronique Oubliées library
  */
 
-var COlib_version = 2.3;
+var COlib_version = 2.4;
 
 var COlib =
   COlib ||
@@ -1354,94 +1354,102 @@ var COlib =
       updateShipCrew(params);
     }
 
+    function updateShipCrewValues() {
+      updateShipCrew({
+        shipId: shipId,
+        nameAttr: 'POSTE_PIL_NOM',
+        caracAttr: { ship: 'POSTE_PIL_DEX', crew: 'DEX_TEST' },
+        bonusAttr: { ship: 'POSTE_PIL_BONUS', crew: 'pilotage' },
+      });
+      updateShipCrew({
+        shipId: shipId,
+        nameAttr: 'POSTE_MOT_NOM',
+        caracAttr: { ship: 'POSTE_MOT_INT', crew: 'INT_TEST' },
+        bonusAttr: { ship: 'POSTE_MOT_BONUS', crew: 'moteurs' },
+      });
+      updateShipCrew({
+        shipId: shipId,
+        nameAttr: 'POSTE_SEN_NOM',
+        caracAttr: { ship: 'POSTE_SEN_INT', crew: 'INT_TEST' },
+        bonusAttr: { ship: 'POSTE_SEN_BONUS', crew: 'electronique' },
+      });
+      updateShipCrew({
+        shipId: shipId,
+        nameAttr: 'POSTE_ORD_NOM',
+        caracAttr: { ship: 'POSTE_ORD_INT', crew: 'INT_TEST' },
+        bonusAttr: { ship: 'POSTE_ORD_BONUS', crew: 'electronique' },
+      });
+      attks = findObjs({
+        _type: 'attribute',
+        _characterid: shipId,
+      }).filter((attrObj) =>
+        attrObj.get('name').startsWith('repeating_armesv')
+      );
+      for (const attk of attks) {
+        const attkId = attk.get('name').split('_')[2];
+        if (attkIds.indexOf(attkId) === -1) attkIds.push(attkId);
+      }
+      attkIds.forEach((attkId) => {
+        updateShipCrew({
+          shipId: shipId,
+          nameAttr: `repeating_armesv_${attkId}_armecan_nom`,
+          caracAttr: {
+            ship: `repeating_armesv_${attkId}_armecan_dex`,
+            crew: 'DEX_TEST',
+          },
+          bonusAttr: {
+            ship: `repeating_armesv_${attkId}_armecan_bonus`,
+            crew: 'armes lourdes',
+          },
+        });
+      });
+    }
+
+    function updateMechaCrewValues() {
+      updateMechaCrew({
+        shipId: shipId,
+        nameAttr: 'mec_crew1_name',
+        carAttr: 'mec_crew1_car',
+        caracAttr: { ship: 'mec_crew1_bonus' },
+        bonusAttr: { ship: 'mec_crew1_rank' },
+      });
+      updateMechaCrew({
+        shipId: shipId,
+        nameAttr: 'mec_crew2_name',
+        carAttr: 'mec_crew2_car',
+        caracAttr: { ship: 'mec_crew2_bonus' },
+        bonusAttr: { ship: 'mec_crew2_rank' },
+      });
+      attks = findObjs({
+        _type: 'attribute',
+        _characterid: shipId,
+      }).filter((attrObj) =>
+        attrObj.get('name').startsWith('repeating_mecatk')
+      );
+      for (const attk of attks) {
+        const attkId = attk.get('name').split('_')[2];
+        if (attkIds.indexOf(attkId) === -1) attkIds.push(attkId);
+      }
+      attkIds.forEach((attkId) => {
+        updateMechaCrew({
+          shipId: shipId,
+          nameAttr: `repeating_mecatk_${attkId}_atkcrew`,
+          carAttr: 'int',
+          caracAttr: { ship: `repeating_mecatk_${attkId}_crewint_bonus` },
+          bonusAttr: { ship: `repeating_mecatk_${attkId}_crewint_rank` },
+        });
+      });
+    }
+
     function updateCrewValues(vehicleType, shipId) {
       let attks = [];
       const attkIds = [];
       switch (vehicleType) {
         case 'vaisseau':
-          updateShipCrew({
-            shipId: shipId,
-            nameAttr: 'POSTE_PIL_NOM',
-            caracAttr: { ship: 'POSTE_PIL_DEX', crew: 'DEX_TEST' },
-            bonusAttr: { ship: 'POSTE_PIL_BONUS', crew: 'pilotage' },
-          });
-          updateShipCrew({
-            shipId: shipId,
-            nameAttr: 'POSTE_MOT_NOM',
-            caracAttr: { ship: 'POSTE_MOT_INT', crew: 'INT_TEST' },
-            bonusAttr: { ship: 'POSTE_MOT_BONUS', crew: 'moteurs' },
-          });
-          updateShipCrew({
-            shipId: shipId,
-            nameAttr: 'POSTE_SEN_NOM',
-            caracAttr: { ship: 'POSTE_SEN_INT', crew: 'INT_TEST' },
-            bonusAttr: { ship: 'POSTE_SEN_BONUS', crew: 'electronique' },
-          });
-          updateShipCrew({
-            shipId: shipId,
-            nameAttr: 'POSTE_ORD_NOM',
-            caracAttr: { ship: 'POSTE_ORD_INT', crew: 'INT_TEST' },
-            bonusAttr: { ship: 'POSTE_ORD_BONUS', crew: 'electronique' },
-          });
-          attks = findObjs({
-            _type: 'attribute',
-            _characterid: shipId,
-          }).filter((attrObj) =>
-            attrObj.get('name').startsWith('repeating_armesv')
-          );
-          for (const attk of attks) {
-            const attkId = attk.get('name').split('_')[2];
-            if (attkIds.indexOf(attkId) === -1) attkIds.push(attkId);
-          }
-          attkIds.forEach((attkId) => {
-            updateShipCrew({
-              shipId: shipId,
-              nameAttr: `repeating_armesv_${attkId}_armecan_nom`,
-              caracAttr: {
-                ship: `repeating_armesv_${attkId}_armecan_dex`,
-                crew: 'DEX_TEST',
-              },
-              bonusAttr: {
-                ship: `repeating_armesv_${attkId}_armecan_bonus`,
-                crew: 'armes lourdes',
-              },
-            });
-          });
+          updateShipCrewValues();
           break;
         case 'mecha':
-          updateMechaCrew({
-            shipId: shipId,
-            nameAttr: 'mec_crew1_name',
-            carAttr: 'mec_crew1_car',
-            caracAttr: { ship: 'mec_crew1_bonus' },
-            bonusAttr: { ship: 'mec_crew1_rank' },
-          });
-          updateMechaCrew({
-            shipId: shipId,
-            nameAttr: 'mec_crew2_name',
-            carAttr: 'mec_crew2_car',
-            caracAttr: { ship: 'mec_crew2_bonus' },
-            bonusAttr: { ship: 'mec_crew2_rank' },
-          });
-          attks = findObjs({
-            _type: 'attribute',
-            _characterid: shipId,
-          }).filter((attrObj) =>
-            attrObj.get('name').startsWith('repeating_mecatk')
-          );
-          for (const attk of attks) {
-            const attkId = attk.get('name').split('_')[2];
-            if (attkIds.indexOf(attkId) === -1) attkIds.push(attkId);
-          }
-          attkIds.forEach((attkId) => {
-            updateMechaCrew({
-              shipId: shipId,
-              nameAttr: `repeating_mecatk_${attkId}_atkcrew`,
-              carAttr: 'int',
-              caracAttr: { ship: `repeating_mecatk_${attkId}_crewint_bonus` },
-              bonusAttr: { ship: `repeating_mecatk_${attkId}_crewint_rank` },
-            });
-          });
+          updateMechaCrewValues();
           break;
       }
     }
